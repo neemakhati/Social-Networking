@@ -83,8 +83,7 @@ exports.updateEvent = functions.https.onRequest((req, res) => {
 
 // Delete an event
 exports.deleteEvent = functions.https.onRequest((req, res) => {
-  const eventId = req.params.id; // Assuming
-
+  const eventId = req.params.id; // Ass
   eventsCollection
       .doc(eventId)
       .delete()

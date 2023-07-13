@@ -46,7 +46,7 @@ const TabNavigator = () => {
 
         return <Ionicons name={iconName} size={size} color={color} />;
       },
-      headerShown: false, // Add this line to hide the header for all screens in the tab navigator
+      headerShown: false, 
     })}
     >
       <Tab.Screen name="Events" component={EventsScreen} />

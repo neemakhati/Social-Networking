@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleEventSelection } from '../redux/actions';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const EventsScreen = () => {
+const EventsScreen = ({ navigation }) => {
   const [events, setEvents] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('Kathmandu');
+  const selectedEvents = useSelector((state) => state.selectedEvents);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     fetchEvents();
@@ -13,62 +17,47 @@ const EventsScreen = () => {
   const fetchEvents = () => {
     // Make API call to fetch events based on the search keyword
     fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getEvents?location=${searchKeyword}`)
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         setEvents(data);
       })
-      .catch(error => {
+      .catch((error) => {
         console.log('Error fetching events:', error);
       });
   };
 
+  const handleToggleSelection = (event) => {
+    dispatch(toggleEventSelection(event));
+  };
+
   const renderCard = ({ item }) => {
-    const cardStyle = {
-      margin: 16,
-      backgroundColor: '#333333',
-      shadowColor: '#000000',
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      elevation: 5,
-    };
-
-    const handleSelectWorkshop = (workshop) => {
-      // Handle workshop selection
-    };
-
-    const handleFavoriteWorkshop = (workshop) => {
-      // Handle workshop favorite
-    };
+    const isEventSelected = selectedEvents.includes(item.id);
 
     return (
-      <TouchableOpacity style={cardStyle}>
+      <View style={styles.cardStyle}>
         <View style={styles.cardContent}>
-          <Image
-            source={{ uri: item.Images }}
-            style={styles.eventImage}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: item.Images }} style={styles.eventImage} resizeMode="contain" />
           <View style={styles.eventDetails}>
             <Text style={styles.eventName}>{item.Workshop}</Text>
             <Text style={styles.eventLocation}>{item.College}</Text>
           </View>
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={() => handleFavoriteWorkshop(item.Workshop)}
+            onPress={() => handleToggleSelection(item.id)}
           >
             <Icon
-              name="heart-outline"
+              name={isEventSelected ? 'heart' : 'heart-outline'}
               size={20}
-              color="#FFFFFF"
+              color={isEventSelected ? 'red' : 'white'}
             />
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     );
+  };
+
+  const handleGoToRecommendationScreen = () => {
+    navigation.navigate('Recommendation');
   };
 
   return (
@@ -76,18 +65,25 @@ const EventsScreen = () => {
       <TextInput
         style={styles.searchInput}
         value={searchKeyword}
-        onChangeText={text => setSearchKeyword(text)}
+        onChangeText={(text) => setSearchKeyword(text)}
         placeholder="Enter search keyword"
         onSubmitEditing={fetchEvents}
       />
       <FlatList
         data={events}
         renderItem={renderCard}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
       />
+      <TouchableOpacity
+        style={styles.recommendationButton}
+        onPress={handleGoToRecommendationScreen}
+      >
+        <Text style={styles.recommendationButtonText}>View Recommendations</Text>
+      </TouchableOpacity>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -101,6 +97,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+  },
+  cardStyle: {
+    margin: 16,
+    backgroundColor: '#333333',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   cardContent: {
     flexDirection: 'row',
@@ -137,10 +145,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#FFFFFF',
   },
-  favoriteButton: {
-    padding: 8,
-    backgroundColor: 'transparent',
-    borderRadius: 50,
+  recommendationButton: {
+    backgroundColor: 'blue',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  recommendationButtonText: {
+    fontSize: 18,
+    color: '#FFFFFF',
   },
 });
 

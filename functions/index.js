@@ -55,7 +55,12 @@ exports.getEvents = functions.https.onRequest((req, res) => {
 
 // Read a single event
 exports.getEvent = functions.https.onRequest((req, res) => {
-  const eventId = req.params.id; // Assuming the event ID
+  const eventId = req.query.id; // Assuming the event ID i
+
+  if (!eventId) {
+    res.status(400).json({error: "Event ID is missing"});
+    return;
+  }
 
   eventsCollection
       .doc(eventId)
@@ -72,6 +77,7 @@ exports.getEvent = functions.https.onRequest((req, res) => {
         }
       })
       .catch((error) => {
+        console.error("Failed to fetch event:", error);
         res.status(500).json({error: "Failed to fetch event"});
       });
 });

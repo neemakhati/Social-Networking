@@ -74,12 +74,7 @@ const EventsScreen = ({ navigation }) => {
         renderItem={renderCard}
         keyExtractor={(item) => item.id.toString()}
       />
-      <TouchableOpacity
-        style={styles.recommendationButton}
-        onPress={handleGoToRecommendationScreen}
-      >
-        <Text style={styles.recommendationButtonText}>View Recommendations</Text>
-      </TouchableOpacity>
+      
     </View>
   );
 };

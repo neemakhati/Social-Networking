@@ -16,10 +16,19 @@ export const LoginScreen = ({ navigation }) => {
 
   const handleLogin = values => {
     const { email, password } = values;
+
+    // TEST
+    if(email==="admin@events.com"){
+      signInWithEmailAndPassword(auth, email, password).catch(error =>
+        setErrorState(error.message)
+      );
+    }
+    else{
     signInWithEmailAndPassword(auth, email, password).catch(error =>
       setErrorState(error.message)
     );
   };
+};
   return (
     <>
       <View isSafe style={styles.container}>

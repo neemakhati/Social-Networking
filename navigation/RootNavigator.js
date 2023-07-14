@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 import { AuthStack } from './AuthStack';
 import { AppStack } from './AppStack';
+import { AdminStack } from './AdminStack'; // Import the AdminStack
 import { AuthenticatedUserContext } from '../providers';
 import { LoadingIndicator } from '../components';
 import { auth } from '../config';
@@ -11,13 +12,26 @@ import { auth } from '../config';
 export const RootNavigator = () => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false); // Add the isAdmin state
+
+  const checkAdminRole = (email) => {
+    // Check if the email is admin@events.com
+    const isAdmin = email === "admin@events.com";
+    setIsAdmin(isAdmin);
+  };
 
   useEffect(() => {
     // onAuthStateChanged returns an unsubscriber
     const unsubscribeAuthStateChanged = onAuthStateChanged(
       auth,
       authenticatedUser => {
-        authenticatedUser ? setUser(authenticatedUser) : setUser(null);
+        if (authenticatedUser) {
+          setUser(authenticatedUser);
+          checkAdminRole(authenticatedUser.email);
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+        }
         setIsLoading(false);
       }
     );
@@ -32,7 +46,7 @@ export const RootNavigator = () => {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? (isAdmin ? <AdminStack /> : <AppStack />) : <AuthStack />}
     </NavigationContainer>
   );
 };

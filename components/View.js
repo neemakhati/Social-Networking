@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const View = ({ isSafe, style, children }) => {
   const insets = useSafeAreaInsets();
-
+//NEW COMMIT
   if (isSafe) {
     return (
       <RNView style={{ paddingTop: insets.top, ...style }}>{children}</RNView>

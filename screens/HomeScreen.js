@@ -1,25 +1,15 @@
-import React from 'react';
+import React,{useEffect, useState} from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import EventsScreen from './EventsScreen';
+import RecommendationScreen from './RecommendationScreen';
 const Tab = createBottomTabNavigator();
 
-const EventsScreen = () => {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Events Screen</Text>
-    </View>
-  );
-};
 
-const RecommendationScreen = () => {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recommendation Screen</Text>
-    </View>
-  );
-};
+
+
+
 
 const SettingsScreen = () => {
   return (
@@ -73,3 +63,5 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
+
+

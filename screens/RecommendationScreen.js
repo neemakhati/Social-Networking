@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const EventsScreen = () => {
   const [events, setEvents] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('Kathmandu');
+  const [selectedWorkshops, setSelectedWorkshops] = useState([]);
 
   useEffect(() => {
     fetchEvents();
@@ -22,6 +23,24 @@ const EventsScreen = () => {
       });
   };
 
+  const handleSelectWorkshop = (workshop) => {
+    // Handle workshop selection
+  };
+
+  const handleFavoriteWorkshop = (workshop) => {
+    setSelectedWorkshops(prevSelectedWorkshops => {
+      if (prevSelectedWorkshops.includes(workshop)) {
+        return prevSelectedWorkshops.filter(selectedWorkshop => selectedWorkshop !== workshop);
+      } else {
+        return [...prevSelectedWorkshops, workshop];
+      }
+    });
+  };
+
+  const isWorkshopSelected = (workshop) => {
+    return selectedWorkshops.includes(workshop);
+  };
+
   const renderCard = ({ item }) => {
     const cardStyle = {
       margin: 16,
@@ -34,14 +53,6 @@ const EventsScreen = () => {
       shadowOpacity: 0.25,
       shadowRadius: 3.84,
       elevation: 5,
-    };
-
-    const handleSelectWorkshop = (workshop) => {
-      // Handle workshop selection
-    };
-
-    const handleFavoriteWorkshop = (workshop) => {
-      // Handle workshop favorite
     };
 
     return (
@@ -57,13 +68,13 @@ const EventsScreen = () => {
             <Text style={styles.eventLocation}>{item.College}</Text>
           </View>
           <TouchableOpacity
-            style={styles.favoriteButton}
+            style={[styles.favoriteButton, { backgroundColor: isWorkshopSelected(item.Workshop) ? 'red' : 'transparent' }]}
             onPress={() => handleFavoriteWorkshop(item.Workshop)}
           >
             <Icon
-              name="heart-outline"
+              name={isWorkshopSelected(item.Workshop) ? 'heart' : 'heart-outline'}
               size={20}
-              color="#FFFFFF"
+              color={isWorkshopSelected(item.Workshop) ? 'white' : 'black'}
             />
           </TouchableOpacity>
         </View>
@@ -139,7 +150,6 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     padding: 8,
-    backgroundColor: 'transparent',
     borderRadius: 50,
   },
 });

@@ -1,6 +1,5 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const cosineSimilarity = require("compute-cosine-similarity");
 admin.initializeApp();
 
 const firestore = admin.firestore();
@@ -16,7 +15,8 @@ exports.createEvent = functions.https.onRequest((req, res) => {
       .then((ref) => {
         res.status(201).json({
           id: ref.id,
-          message: "Event created successfully"});
+          message: "Event created successfully",
+        });
       })
       .catch((error) => {
         res.status(500).json({error: "Failed to create event"});
@@ -112,68 +112,69 @@ exports.deleteEvent = functions.https.onRequest((req, res) => {
       });
 });
 
-function calculateSimilarityScore(features1, features2) {
-  const similarityScore = cosineSimilarity(features1, features2);
-  return similarityScore;
-}
-// Function to get the top recommended items based on item IDs and user features
-async function getTopRecommendedItems(
-    itemIds,
-    userFeatures,
-    numRecommendations = 5) {
-  // Fetch the items from the
-  const itemSnapshots = await Promise.all(
-      itemIds.map((itemId) =>
-        admin.firestore().collection("Events").doc(itemId).get()),
-  );
-  // Extract the item features from the fetched items
-  const itemFeatures = itemSnapshots.map((snapshot) => {
-    const item = snapshot.data();
-    return [item.Genre, item.Location, item.Ratings];
-  });
-  const scores = [];
-  for (let i = 0; i < itemIds.length; i++) {
-    const itemId = itemIds[i];
-    const itemFeature = itemFeatures[i];
-    // Calculate similarity score between user features and item features
-    const score = calculateSimilarityScore(userFeatures, itemFeature);
-    scores.push({id: itemId, score});
-  }
-  // Sort items based on similarity score
-  scores.sort((a, b) => b.score - a.score);
-  // Get top N recommendations
-  const topRecommendations = scores.slice(
-      0, numRecommendations,
-  ).map((item) => item.id);
-  // Fetch the recommended items from the database
-  const recommendedItemsSnapshot = await admin
-      .firestore()
-      .collection("Events")
-      .where(admin.firestore.FieldPath.documentId(), "in", topRecommendations)
-      .get();
-  const recommendedItems = recommendedItemsSnapshot.docs.map((doc) =>
-    doc.data());
-  return recommendedItems;
-}
-exports.recommendations = functions.https.onRequest(async (req, res) => {
+exports.getRecommendedEvents = functions.https.onRequest(async (req, res) => {
   try {
-    const itemIds = req.query.favorites.split(",");
-    // Fetch the items from the database based on the provided item IDs
-    const itemSnapshots = await Promise.all(
-        itemIds.map((itemId) =>
-          admin.firestore().collection("Events").doc(itemId).get()),
-    );
-    // Extract the user features from the fetched items
-    const userFeatures = itemSnapshots.map((snapshot) => {
-      const item = snapshot.data();
-      return [item.Genre, item.Location, item.Ratings];
-    });
-    // Get the top recommended items based o
-    const recommendedItems = await getTopRecommendedItems(itemIds,
-        userFeatures);
-    res.status(200).json({recommendations: recommendedItems});
+    const {id} = req.query;
+    const eventIds = id.split(",");
+    const requestedEventSnapshot = await eventsCollection.doc(
+        eventIds[0],
+    ).get();
+    const requestedEventData = requestedEventSnapshot.data();
+    const allEventsSnapshot = await eventsCollection.get();
+    const allEventsData = allEventsSnapshot.docs.map((doc) => doc.data());
+
+    // Count the number of genres in the requested events
+    const genresCount = {};
+    for (const eventId of eventIds) {
+      const eventSnapshot = await eventsCollection.doc(eventId).get();
+      const eventData = eventSnapshot.data();
+      const genres = eventData.Genre.split(",");
+      for (const genre of genres) {
+        if (genresCount[genre]) {
+          genresCount[genre]++;
+        } else {
+          genresCount[genre] = 1;
+        }
+      }
+    }
+
+    const recommendedEvents = allEventsData
+        .map((event) => ({
+          ...event,
+          similarityScore: calculateSimilarity(
+              requestedEventData.Genre, event.Genre),
+        }))
+        .filter((event) => !eventIds.includes(event.id))
+        .sort((a, b) => b.similarityScore - a.similarityScore)
+        .filter((event) => {
+        // Check if the event's genre is within the desired distribution
+          const genres = event.Genre.split(",");
+          for (const genre of genres) {
+            if (genresCount[genre] && genresCount[genre] > 0) {
+              genresCount[genre]--;
+              return true;
+            }
+          }
+          return false;
+        })
+        .slice(0, 5);
+
+    res.status(200).json(recommendedEvents);
   } catch (error) {
-    console.error("Error fetching recommendations:", error);
-    res.status(500).json({error: "Failed to fetch recommendations"});
+    console.error("Error retrieving recommended events:", error);
+    res.status(500).send("Internal server error");
   }
 });
+
+// Helper function to calculate similarity based on Genre
+function calculateSimilarity(genreA, genreB) {
+  const genreArrayA = genreA.split(",");
+  const genreArrayB = genreB.split(",");
+  // Find common genres
+  const commonGenres = genreArrayA.filter((genre) =>
+    genreArrayB.includes(genre));
+  // Calculate similarity score based on the number of common genres
+  const similarityScore =
+    commonGenres.length / Math.sqrt(genreArrayA.length * genreArrayB.length);
+  return similarityScore;
+}

@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import EventsScreen from './EventsScreen';
 import RecommendationScreen from './RecommendationScreen';
+import SettingsScreen from './SettingsScreen';
 const Tab = createBottomTabNavigator();
 
 
@@ -11,13 +12,6 @@ const Tab = createBottomTabNavigator();
 
 
 
-const SettingsScreen = () => {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Settings Screen</Text>
-    </View>
-  );
-};
 
 const TabNavigator = () => {
   return (

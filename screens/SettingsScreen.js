@@ -1,16 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
+import { signOut } from 'firebase/auth';
+import { auth } from '../config';
 
-const SettingsScreen = ({ navigation }) => {
-  const handleLogout = () => {
-    // Perform logout logic here, e.g., clear user session, remove tokens, etc.
-    
-    // Navigate to the "Login" screen
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
-  };
+const SettingsScreen = () => {
+ const handleLogout = () => {
+        signOut(auth).catch(error => console.log('Error logging out: ', error));
+      };
 
   return (
     <View style={styles.container}>

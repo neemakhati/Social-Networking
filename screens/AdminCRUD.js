@@ -1,19 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { View, Image, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Image,
+  Text,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleEventSelection } from '../redux/actions';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 const AdminCRUD = ({ navigation }) => {
   const [events, setEvents] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('Kathmandu');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [description, setDescription] = useState('');
+  const [images, setImages] = useState('');
+  const [college, setCollege] = useState('');
+  const [workshop, setWorkshop] = useState('');
+  const [genre, setGenre] = useState('');
+  const [location, setLocation] = useState('');
   const selectedEvents = useSelector((state) => state.selectedEvents);
   const dispatch = useDispatch();
-
   useEffect(() => {
     fetchEvents();
   }, []);
-
   const fetchEvents = () => {
     // Make API call to fetch events based on the search keyword
     fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getEvents?location=${searchKeyword}`)
@@ -26,16 +40,43 @@ const AdminCRUD = ({ navigation }) => {
       });
   };
 
+  
   const handleToggleSelection = (event) => {
     dispatch(toggleEventSelection(event));
   };
-
+  const handleCreateEvent = () => {
+    // Make API call to create a new event with entered values
+    fetch('https://us-central1-eventsnet-fa0f0.cloudfunctions.net/createEvent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        description,
+        images,
+        college,
+        workshop,
+        genre,
+        location,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Event created successfully:', data);
+        // Close the modal after successful creation
+        setModalVisible(false);
+        // Fetch the updated events list
+        fetchEvents();
+      })
+      .catch((error) => {
+        console.log('Error creating event:', error);
+      });
+  };
   const renderCard = ({ item }) => {
     const isEventSelected = selectedEvents.includes(item.id);
-
     return (
       <View style={styles.cardStyle}>
-        <View style={styles.cardContent}>
+       <View style={styles.cardContent}>
           <Image source={{ uri: item.Images }} style={styles.eventImage} resizeMode="contain" />
           <View style={styles.eventDetails}>
             <Text style={styles.eventName}>{item.Workshop}</Text>
@@ -56,12 +97,76 @@ const AdminCRUD = ({ navigation }) => {
     );
   };
 
-  const handleGoToRecommendationScreen = () => {
-    navigation.navigate('Recommendation');
-  };
-
   return (
     <View style={styles.container}>
+      {/* Add Event button */}
+      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+        <Icon name="plus" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+      {/* Modal for entering event details */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {/* Input fields for event details */}
+            <TextInput
+              style={styles.modalInput}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Description"
+            />
+            <TextInput
+              style={styles.modalInput}
+              value={images}
+              onChangeText={setImages}
+              placeholder="Images"
+            />
+            <TextInput
+              style={styles.modalInput}
+              value={college}
+              onChangeText={setCollege}
+              placeholder="College"
+            />
+            <TextInput
+              style={styles.modalInput}
+              value={workshop}
+              onChangeText={setWorkshop}
+              placeholder="Workshop"
+            />
+            <TextInput
+              style={styles.modalInput}
+              value={genre}
+              onChangeText={setGenre}
+              placeholder="Genre"
+            />
+            <TextInput
+              style={styles.modalInput}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Location"
+            />
+            {/* Save and Cancel buttons */}
+            <View style={styles.modalButtonsContainer}>
+              <Pressable style={styles.modalButton} onPress={handleCreateEvent}>
+                <Text style={styles.modalButtonText}>Save</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalButton}
+                onPress={() => {
+                  setModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      {/* Other content */}
       <TextInput
         style={styles.searchInput}
         value={searchKeyword}
@@ -69,23 +174,19 @@ const AdminCRUD = ({ navigation }) => {
         placeholder="Enter search keyword"
         onSubmitEditing={fetchEvents}
       />
-      <FlatList
-        data={events}
-        renderItem={renderCard}
-        keyExtractor={(item) => item.id.toString()}
-      />
-      
+      <FlatList data={events} renderItem={renderCard} keyExtractor={(item) => item.id.toString()} />
+  
     </View>
   );
 };
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
     backgroundColor: '#f9f9f9',
+    paddingBottom: 80, // Add bottom padding to avoid overlapping the floating button
   },
+ 
   searchInput: {
     height: 40,
     borderColor: 'gray',
@@ -94,31 +195,73 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   cardStyle: {
-    margin: 16,
     backgroundColor: '#333333',
-    shadowColor: '#000000',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16, // Add marginBottom to create space between cards
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 2,
   },
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#333333',
+  },
+  addButtonWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: 'blue',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },  
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Use a semi-transparent color for the modal container
+    zIndex: 1, // Ensure the modal appears above other content
+  },
+  modalContent: {
+    backgroundColor: 'white',
     borderRadius: 8,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    width: '80%',
+  },
+  modalInput: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20, // Add marginTop to create space between input fields and buttons
+  },
+  modalButton: {
+    padding: 10,
+    backgroundColor: 'blue',
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   eventImage: {
     width: 100,
@@ -153,5 +296,4 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
-
 export default AdminCRUD;

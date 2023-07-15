@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import EventsScreen from './EventsScreen';
 import RecommendationScreen from './RecommendationScreen';
 import SettingsScreen from './SettingsScreen';
+import AdminCRUD from './AdminCRUD';
 const Tab = createBottomTabNavigator();
 
 
@@ -33,7 +34,7 @@ const TabNavigator = () => {
       headerShown: false, 
     })}
     >
-      <Tab.Screen name="HOME" component={EventsScreen} />
+      <Tab.Screen name="HOME" component={AdminCRUD} />
       <Tab.Screen name="Recommendation" component={RecommendationScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>

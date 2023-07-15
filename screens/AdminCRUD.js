@@ -24,6 +24,27 @@ const AdminCRUD = ({ navigation }) => {
   const [genre, setGenre] = useState('');
   const [location, setLocation] = useState('');
   const selectedEvents = useSelector((state) => state.selectedEvents);
+
+
+  const [deleteItemId, setDeleteItemId] = useState(null);
+
+
+  const setDeleteConfirmation = (itemId) => {
+    setDeleteItemId(itemId);
+    setModalVisible(true);
+  };
+
+
+  const handleDeleteConfirmation = () => {
+    // Call the handleDeleteEvent function with the deleteItemId
+    handleDeleteEvent(deleteItemId);
+    // Reset the deleteItemId after handling deletion
+    setDeleteItemId(null);
+    setModalVisible(false); // Close the confirmation dialog
+  };
+  
+
+
   const dispatch = useDispatch();
   useEffect(() => {
     fetchEvents();
@@ -39,8 +60,32 @@ const AdminCRUD = ({ navigation }) => {
         console.log('Error fetching events:', error);
       });
   };
-
   
+  const handleDeleteEvent = (eventId) => {
+    // Make API call to delete the event with the given eventId
+    fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/deleteEvent?id=${eventId}`, {
+      method: 'DELETE',
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Event deleted successfully with ID ' + eventId, data);
+        // Remove the deleted event from the events list in the state
+        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+      })
+      .catch((error) => {
+        console.log('Error deleting event:', error);
+      });
+  };
+  
+  
+  const handleEditEvent = (event) => {
+    // Implement the edit functionality, e.g., navigate to the edit screen with the event details
+    // You can use the 'navigation' prop to navigate to the edit screen and pass the event details as params
+    navigation.navigate('EditEventScreen', { event });
+  };
+
+
+
   const handleToggleSelection = (event) => {
     dispatch(toggleEventSelection(event));
   };
@@ -82,10 +127,20 @@ const AdminCRUD = ({ navigation }) => {
             <Text style={styles.eventName}>{item.Workshop}</Text>
             <Text style={styles.eventLocation}>{item.College}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={() => handleToggleSelection(item.id)}
-          >
+
+
+
+          <View style={styles.iconContainer}>
+          {/* Edit Event Icon */}
+          <TouchableOpacity onPress={() => handleEditEvent(item)}>
+            <Icon name="pencil" size={24} color="blue" />
+          </TouchableOpacity>
+          {/* Delete Event Icon */}
+          <TouchableOpacity onPress={() => setDeleteConfirmation(item.id)}>
+            <Icon name="delete" size={24} color="red" />
+          </TouchableOpacity>
+          {/* Favorite Event Icon */}
+          <TouchableOpacity style={styles.favoriteButton} onPress={() => handleToggleSelection(item.id)}>
             <Icon
               name={isEventSelected ? 'heart' : 'heart-outline'}
               size={20}
@@ -94,8 +149,9 @@ const AdminCRUD = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-    );
-  };
+    </View>
+  );
+};
 
   return (
     <View style={styles.container}>
@@ -103,15 +159,41 @@ const AdminCRUD = ({ navigation }) => {
       <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <Icon name="plus" size={24} color="#FFFFFF" />
       </TouchableOpacity>
+      
       {/* Modal for entering event details */}
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+  animationType="slide"
+  transparent={true}
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(false)}
+>
+  {deleteItemId ? (
+    // Delete confirmation dialog
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <Text style={styles.modalTitle}>Confirm Delete</Text>
+        <Text style={styles.modalText}>Are you sure you want to delete this event?</Text>
+        <View style={styles.modalButtonsContainer}>
+          <Pressable style={styles.modalButton} onPress={handleDeleteConfirmation}>
+            <Text style={styles.modalButtonText}>YES</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.modalButton, styles.modalButtonCancel]}
+            onPress={() => {
+              setDeleteItemId(null);
+              setModalVisible(false);
+            }}
+          >
+            <Text style={styles.modalButtonText}>NO</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  ) : (
+    // Create Event content
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+
             {/* Input fields for event details */}
             <TextInput
               style={styles.modalInput}
@@ -165,6 +247,7 @@ const AdminCRUD = ({ navigation }) => {
             </View>
           </View>
         </View>
+      )}
       </Modal>
       {/* Other content */}
       <TextInput

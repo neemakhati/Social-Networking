@@ -1,3 +1,6 @@
+//NEW ONE TO MAKE CHANGES
+//STYLING DONE
+
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -28,6 +31,8 @@ const AdminCRUD = ({ navigation }) => {
 
   const [deleteItemId, setDeleteItemId] = useState(null);
 
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editMode, setEditMode] = useState(false); // New state variable for edit mode
 
   const setDeleteConfirmation = (itemId) => {
     setDeleteItemId(itemId);
@@ -50,16 +55,19 @@ const AdminCRUD = ({ navigation }) => {
     fetchEvents();
   }, []);
   const fetchEvents = () => {
-    // Make API call to fetch events based on the search keyword
-    fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getEvents?location=${searchKeyword}`)
+    // Make API call to fetch events based on the search keyword and sort by timestamp
+    fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getEvents?location=${searchKeyword}&orderBy=timestamp`)
       .then((response) => response.json())
       .then((data) => {
-        setEvents(data);
+        // Sort the events based on their timestamps in descending order (newest events first)
+        const sortedEvents = data.sort((a, b) => b.timestamp - a.timestamp);
+        setEvents(sortedEvents);
       })
       .catch((error) => {
         console.log('Error fetching events:', error);
       });
   };
+  
   
   const handleDeleteEvent = (eventId) => {
     // Make API call to delete the event with the given eventId
@@ -79,9 +87,95 @@ const AdminCRUD = ({ navigation }) => {
   
   
   const handleEditEvent = (event) => {
-    navigation.navigate('EditEventScreen', { event });
+    setEditMode(true); // Set the mode to Edit
+    setEditingEvent(event);
+    // Fetch the details of the event to be edited
+    fetchEventDetails(event.id);
+    setModalVisible(true);
   };
-  
+
+  const fetchEventDetails = (eventId) => {
+    fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getEvent?id=${eventId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Event details:', data);
+        // Populate the modal input fields with the event details
+        setDescription(data.Description);
+        setImages(data.Images);
+        setCollege(data.College);
+        setWorkshop(data.Workshop);
+        setGenre(data.Genre);
+        setLocation(data.Location);
+      })
+      .catch((error) => {
+        console.log('Error fetching event details:', error);
+      });
+  };
+  const handleSave = () => {
+    if (editMode) {
+      // Handle save for Edit mode
+      // Make API call to update the event with the entered values
+      fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/updateEvent?id=${editingEvent.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Description: description,
+          Images: images,
+          College: college,
+          Workshop: workshop,
+          Genre: genre,
+          Location: location,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log('Event updated successfully:', data);
+          console.log('Event of Id:', editingEvent.id);
+          fetchEvents();
+          // Update the events state with the updated event
+          setEvents((prevEvents) =>
+            prevEvents.map((event) => (event.id === editingEvent.id ? { ...event, ...data } : event))
+          );
+          setModalVisible(false);
+          setEditMode(false); // Reset the edit mode
+        })
+        .catch((error) => {
+          console.log('Error updating event:', error);
+        });
+    } else {
+      // Handle save for Create mode
+      // Make API call to create a new event with entered values
+      fetch('https://us-central1-eventsnet-fa0f0.cloudfunctions.net/createEvent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Description: description,
+        Images: images,
+        College: college,
+        Workshop: workshop,
+        Genre: genre,
+        Location: location,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log('Event created successfully:', data);
+          // Update the events state with the newly created event
+          setEvents((prevEvents) => [...prevEvents, data]);
+          setModalVisible(false);
+          // No need to reset the edit mode in Create mode
+        })
+        .catch((error) => {
+          console.log('Error creating event:', error);
+        });
+    }
+  };
+
+
 
 
   const handleToggleSelection = (event) => {
@@ -131,11 +225,11 @@ const AdminCRUD = ({ navigation }) => {
           <View style={styles.iconContainer}>
           {/* Edit Event Icon */}
           <TouchableOpacity onPress={() => handleEditEvent(item)}>
-            <Icon name="pencil" size={24} color="blue" />
+            <Icon name="pencil" size={24} color="white" />
           </TouchableOpacity>
           {/* Delete Event Icon */}
           <TouchableOpacity onPress={() => setDeleteConfirmation(item.id)}>
-            <Icon name="delete" size={24} color="red" />
+            <Icon name="delete" size={24} color="white" />
           </TouchableOpacity>
           {/* Favorite Event Icon */}
           <TouchableOpacity style={styles.favoriteButton} onPress={() => handleToggleSelection(item.id)}>
@@ -187,66 +281,66 @@ const AdminCRUD = ({ navigation }) => {
         </View>
       </View>
     </View>
-  ) : (
-    // Create Event content
+  ) :(
+    // Modal content for both Create and Edit modes
     <View style={styles.modalContainer}>
       <View style={styles.modalContent}>
-
-            {/* Input fields for event details */}
-            <TextInput
-              style={styles.modalInput}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Description"
-            />
-            <TextInput
-              style={styles.modalInput}
-              value={images}
-              onChangeText={setImages}
-              placeholder="Images"
-            />
-            <TextInput
-              style={styles.modalInput}
-              value={college}
-              onChangeText={setCollege}
-              placeholder="College"
-            />
-            <TextInput
-              style={styles.modalInput}
-              value={workshop}
-              onChangeText={setWorkshop}
-              placeholder="Workshop"
-            />
-            <TextInput
-              style={styles.modalInput}
-              value={genre}
-              onChangeText={setGenre}
-              placeholder="Genre"
-            />
-            <TextInput
-              style={styles.modalInput}
-              value={location}
-              onChangeText={setLocation}
-              placeholder="Location"
-            />
-            {/* Save and Cancel buttons */}
-            <View style={styles.modalButtonsContainer}>
-              <Pressable style={styles.modalButton} onPress={handleCreateEvent}>
-                <Text style={styles.modalButtonText}>Save</Text>
-              </Pressable>
-              <Pressable
-                style={styles.modalButton}
-                onPress={() => {
-                  setModalVisible(false);
-                }}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </Pressable>
-            </View>
-          </View>
+        {/* Input fields for event details */}
+        <TextInput
+          style={styles.modalInput}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Description"
+        />
+        <TextInput
+          style={styles.modalInput}
+          value={images}
+          onChangeText={setImages}
+          placeholder="Images"
+        />
+        <TextInput
+          style={styles.modalInput}
+          value={college}
+          onChangeText={setCollege}
+          placeholder="College"
+        />
+        <TextInput
+          style={styles.modalInput}
+          value={workshop}
+          onChangeText={setWorkshop}
+          placeholder="Workshop"
+        />
+        <TextInput
+          style={styles.modalInput}
+          value={genre}
+          onChangeText={setGenre}
+          placeholder="Genre"
+        />
+        <TextInput
+          style={styles.modalInput}
+          value={location}
+          onChangeText={setLocation}
+          placeholder="Location"
+        />
+        {/* Save and Cancel buttons */}
+        <View style={styles.modalButtonsContainer}>
+          <Pressable style={styles.modalButton} onPress={handleSave}>
+            <Text style={styles.modalButtonText}>Save</Text>
+          </Pressable>
+          <Pressable
+            style={styles.modalButton}
+            onPress={() => {
+              setModalVisible(false);
+              setEditMode(false); // Reset the edit mode
+            }}
+          >
+            <Text style={styles.modalButtonText}>Cancel</Text>
+          </Pressable>
         </View>
-      )}
-      </Modal>
+      </View>
+    </View>
+  )}
+</Modal>
       {/* Other content */}
       <TextInput
         style={styles.searchInput}
@@ -265,7 +359,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f9f9f9',
-    paddingBottom: 80, // Add bottom padding to avoid overlapping the floating button
   },
  
   searchInput: {
@@ -274,6 +367,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+    borderRadius: 8,
   },
   cardStyle: {
     backgroundColor: '#333333',
@@ -302,13 +396,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 16,
     right: 16,
-    backgroundColor: 'blue',
+    backgroundColor: '#6B61A9',
     width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
+    zIndex: 2
   },  
   modalContainer: {
     flex: 1,
@@ -337,7 +432,7 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     padding: 10,
-    backgroundColor: 'blue',
+    backgroundColor: '#6B61A9',
     borderRadius: 8,
   },
   modalButtonText: {

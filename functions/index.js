@@ -3,6 +3,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const firestore = admin.firestore();
 const eventsCollection = firestore.collection("Events");
+
 // Create an event
 exports.createEvent = functions.https.onRequest((req, res) => {
   const event = req.body; // Assuming the request body contains the event data
@@ -108,73 +109,47 @@ exports.deleteEvent = functions.https.onRequest((req, res) => {
 });
 
 
-exports.getRecommendation = functions.https.onRequest(async (req, res) => {
+// index.js
+
+exports.getRecommendedEvents = functions.https.onRequest(async (req, res) => {
   try {
     const {id} = req.query;
-    if (!id) {
-      throw new Error("Event ID is missing in the query parameters.");
-    }
+    console.log("Requested event IDs:", id);
 
     const eventIds = id.split(",");
-    if (eventIds.length === 0) {
-      throw new Error("No event IDs provided in the query parameters.");
-    }
-
-    const requestedEventSnapshot = await eventsCollection.doc(
-        eventIds[0]).get();
-    if (!requestedEventSnapshot.exists) {
-      throw new Error("Requested event does not exist in the database.");
-    }
-
-    const requestedEventData = requestedEventSnapshot.data();
-    if (!requestedEventData || !requestedEventData.Genre) {
-      throw new Error("Requested event data or Genre is missing or undefined.");
-    }
+    console.log("Split event IDs:", eventIds);
 
     const allEventsSnapshot = await eventsCollection.get();
     const allEventsData = allEventsSnapshot.docs.map((doc) => doc.data());
-    if (!allEventsData || allEventsData.length === 0) {
-      throw new Error("No events found in the database.");
-    }
+    console.log("All events data:", allEventsData);
 
-    // Count the number of genres in the requested events
-    const genresCount = {};
+    const requestedEventsData = [];
+
+    // Fetch data for the requested events
     for (const eventId of eventIds) {
+      console.log("Fetching event data for event ID:", eventId);
       const eventSnapshot = await eventsCollection.doc(eventId).get();
       const eventData = eventSnapshot.data();
-      if (eventData && eventData.Genre) {
-        const genres = eventData.Genre.split(",");
-        for (const genre of genres) {
-          if (genresCount[genre]) {
-            genresCount[genre]++;
-          } else {
-            genresCount[genre] = 1;
-          }
-        }
+      if (eventData) {
+        console.log("Event data for event ID", eventId, ":", eventData);
+        requestedEventsData.push(eventData);
+      } else {
+        console.log("Event data not found for event ID:", eventId);
       }
     }
+
+    console.log("Requested events data:", requestedEventsData);
 
     const recommendedEvents = allEventsData
         .map((event) => ({
           ...event,
-          similarityScore: calculateSimilarity(
-              requestedEventData.Genre, event.Genre),
+          similarityScore: calculateSimilarity(requestedEventsData, event),
         }))
         .filter((event) => !eventIds.includes(event.id))
         .sort((a, b) => b.similarityScore - a.similarityScore)
-        .filter((event) => {
-        // Check if the event's genre is within the desired distribution
-          const genres = event.Genre.split(",");
-          for (const genre of genres) {
-            if (genresCount[genre] && genresCount[genre] > 0) {
-              genresCount[genre]--;
-              return true;
-            }
-          }
-          return false;
-        })
-        .slice(0, 5);
+        .slice(0, 6); // Limit to a maximum of 6 recommendations
 
+    console.log("Recommended events:", recommendedEvents);
     res.status(200).json(recommendedEvents);
   } catch (error) {
     console.error("Error retrieving recommended events:", error);
@@ -182,15 +157,29 @@ exports.getRecommendation = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// Helper function to calculate similarity based on Genre
-function calculateSimilarity(genreA, genreB) {
-  const genreArrayA = genreA ? genreA.split(",") : [];
-  const genreArrayB = genreB ? genreB.split(",") : [];
-  // Find common genres
-  const commonGenres = genreArrayA.filter((genre) =>
-    genreArrayB.includes(genre));
-  // Calculate similarity score based on the number of common genres
-  const similarityScore = commonGenres.length / Math.sqrt(
-      genreArrayA.length * genreArrayB.length);
-  return similarityScore;
+function calculateSimilarity(requestedEventsData, eventB) {
+  if (!eventB || !eventB.Genre) {
+    // Return a default similarity score
+    // (e.g., 0) when eventB or its Genre property is not available
+    return 0;
+  }
+
+  const genreArrayB = eventB.Genre.split(",");
+  let totalSimilarityScore = 0;
+
+  for (const requestedEvent of requestedEventsData) {
+    const genreArrayA = requestedEvent.Genre.split(",");
+    // Find common genres
+    const commonGenres = genreArrayA.filter((genre) =>
+      genreArrayB.includes(genre),
+    );
+    // Calculate similarity score based on the number of common genres
+    const similarityScore =
+      commonGenres.length / Math.sqrt(genreArrayA.length * genreArrayB.length);
+    totalSimilarityScore += similarityScore;
+  }
+
+  const averageSimilarityScore =
+    totalSimilarityScore / requestedEventsData.length;
+  return averageSimilarityScore;
 }

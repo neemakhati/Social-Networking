@@ -1,3 +1,5 @@
+//STYLING DONE
+
 import React, { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -92,10 +94,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+    borderRadius:8,
   },
   cardStyle: {
     margin: 16,
     backgroundColor: '#333333',
+    borderRadius: 8,
     shadowColor: '#000000',
     shadowOffset: {
       width: 0,

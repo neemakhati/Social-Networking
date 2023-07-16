@@ -32,6 +32,10 @@ const TabNavigator = () => {
       },
       headerShown: false, 
     })}
+    tabBarOptions={{
+      activeTintColor: '#6B61A9', // Set the active icon color
+      inactiveTintColor: 'gray', // Set the inactive icon color
+    }}
     >
       <Tab.Screen name="Events" component={EventsScreen} />
       <Tab.Screen name="Recommendation" component={RecommendationScreen} />

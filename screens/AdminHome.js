@@ -4,10 +4,7 @@ import { View, Text, StyleSheet, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import RecommendationScreen from './RecommendationScreen';
 import SettingsScreen from './SettingsScreen';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import AdminCRUD from './AdminCRUD';
-import EditEventScreen from './EditEventScreen';
 const Tab = createBottomTabNavigator();
 
 
@@ -23,8 +20,8 @@ const TabNavigator = () => {
       tabBarIcon: ({ focused, color, size }) => {
         let iconName;
 
-        if (route.name === 'Events') {
-          iconName = focused ? 'ios-calendar' : 'ios-calendar-outline';
+        if (route.name === 'HOME') {
+          iconName = focused ? 'ios-home' : 'ios-home-outline';
         } else if (route.name === 'Recommendation') {
           iconName = focused ? 'hardware-chip' : 'hardware-chip-outline';
         } else if (route.name === 'Settings') {
@@ -33,20 +30,18 @@ const TabNavigator = () => {
 
         return <Ionicons name={iconName} size={size} color={color} />;
       },
+      
       headerShown: false, 
     })}
+    tabBarOptions={{
+      activeTintColor: '#6B61A9', // Set the active icon color
+      inactiveTintColor: 'gray', // Set the inactive icon color
+    }}
     >
       <Tab.Screen name="HOME" component={AdminCRUD} />
       <Tab.Screen name="Recommendation" component={RecommendationScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
-      <Tab.Screen
-        name="EditEventScreen"
-        component={EditEventScreen}
-        options={{
-          tabBarLabel: 'Edit Event',
-          tabBarIcon: ({ color, size }) => <Icon name="pencil" color={color} size={size} />,
-        }}
-      />
+      
     </Tab.Navigator>
   );
 };

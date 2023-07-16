@@ -79,11 +79,9 @@ const AdminCRUD = ({ navigation }) => {
   
   
   const handleEditEvent = (event) => {
-    // Implement the edit functionality, e.g., navigate to the edit screen with the event details
-    // You can use the 'navigation' prop to navigate to the edit screen and pass the event details as params
     navigation.navigate('EditEventScreen', { event });
   };
-
+  
 
 
   const handleToggleSelection = (event) => {

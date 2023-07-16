@@ -72,9 +72,11 @@ exports.getEvent = functions.https.onRequest((req, res) => {
       });
 });
 // Update an event
+// Update an event
 exports.updateEvent = functions.https.onRequest((req, res) => {
-  const eventId = req.params.id; // Assuming
-  const updatedEvent = req.body; // Assuming
+  const eventId = req.query.id; // Get event ID from query parameters
+  const updatedEvent = req.body; // Get updated event data from request body
+
   eventsCollection
       .doc(eventId)
       .update(updatedEvent)
@@ -85,6 +87,7 @@ exports.updateEvent = functions.https.onRequest((req, res) => {
         res.status(500).json({error: "Failed to update event"});
       });
 });
+
 // Delete an event
 exports.deleteEvent = functions.https.onRequest((req, res) => {
   const eventId = req.query.id; //

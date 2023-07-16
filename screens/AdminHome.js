@@ -2,10 +2,12 @@ import React,{useEffect, useState} from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TextInput, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import EventsScreen from './EventsScreen';
 import RecommendationScreen from './RecommendationScreen';
 import SettingsScreen from './SettingsScreen';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import AdminCRUD from './AdminCRUD';
+import EditEventScreen from './EditEventScreen';
 const Tab = createBottomTabNavigator();
 
 
@@ -37,6 +39,14 @@ const TabNavigator = () => {
       <Tab.Screen name="HOME" component={AdminCRUD} />
       <Tab.Screen name="Recommendation" component={RecommendationScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen
+        name="EditEventScreen"
+        component={EditEventScreen}
+        options={{
+          tabBarLabel: 'Edit Event',
+          tabBarIcon: ({ color, size }) => <Icon name="pencil" color={color} size={size} />,
+        }}
+      />
     </Tab.Navigator>
   );
 };

@@ -109,77 +109,103 @@ exports.deleteEvent = functions.https.onRequest((req, res) => {
 });
 
 
-// index.js
+// Manual cosine similarity function for single value
+function cosineSimilarity(str1, str2) {
+  const words1 = str1.toLowerCase().split(/\W+/).filter((word) =>
+    word.length > 0);
+  const words2 = str2.toLowerCase().split(/\W+/).filter((word) =>
+    word.length > 0);
 
-exports.getRecommendedEvents = functions.https.onRequest(async (req, res) => {
+  const wordSet = new Set([...words1, ...words2]);
+
+  const vector1 = [];
+  const vector2 = [];
+
+  for (const word of wordSet) {
+    vector1.push(words1.includes(word) ? 1 : 0);
+    vector2.push(words2.includes(word) ? 1 : 0);
+  }
+
+  return dotProduct(
+      vector1, vector2) / (magnitude(vector1) * magnitude(vector2));
+}
+
+function dotProduct(vector1, vector2) {
+  return vector1.reduce((sum, value, index) =>
+    sum + value * vector2[index], 0);
+}
+
+function magnitude(vector) {
+  return Math.sqrt(vector.reduce((sum, value) =>
+    sum + value * value, 0));
+}
+
+exports.getRecommendations = functions.https.onRequest(async (req, res) => {
   try {
-    const {id} = req.query;
-    console.log("Requested event IDs:", id);
+    const eventIds = req.query.ids;
 
-    const eventIds = id.split(",");
-    console.log("Split event IDs:", eventIds);
-
-    const allEventsSnapshot = await eventsCollection.get();
-    const allEventsData = allEventsSnapshot.docs.map((doc) => doc.data());
-    console.log("All events data:", allEventsData);
-
-    const requestedEventsData = [];
-
-    // Fetch data for the requested events
-    for (const eventId of eventIds) {
-      console.log("Fetching event data for event ID:", eventId);
-      const eventSnapshot = await eventsCollection.doc(eventId).get();
-      const eventData = eventSnapshot.data();
-      if (eventData) {
-        console.log("Event data for event ID", eventId, ":", eventData);
-        requestedEventsData.push(eventData);
-      } else {
-        console.log("Event data not found for event ID:", eventId);
-      }
+    if (!eventIds) {
+      return res.status(400).json({
+        error: "Missing event IDs in the query parameters."});
     }
 
-    console.log("Requested events data:", requestedEventsData);
+    const eventIdsArray = eventIds.split(",");
 
-    const recommendedEvents = allEventsData
-        .map((event) => ({
-          ...event,
-          similarityScore: calculateSimilarity(requestedEventsData, event),
-        }))
-        .filter((event) => !eventIds.includes(event.id))
-        .sort((a, b) => b.similarityScore - a.similarityScore)
-        .slice(0, 6); // Limit to a maximum of 6 recommendations
+    // Fetch events data from Firestore collection "Events"
+    const db = admin.firestore();
+    const eventsSnapshot = await db.collection("Events").get();
+    const eventsData = eventsSnapshot.docs.map((doc) => {
+      const eventData = doc.data();
+      return {id: doc.id, ...eventData};
+      // Use Firestore document ID as the event ID
+    });
 
-    console.log("Recommended events:", recommendedEvents);
-    res.status(200).json(recommendedEvents);
+    // Find the selected events
+    // based on the provided event IDs
+    const selectedEvents = eventsData.filter((event) =>
+      eventIdsArray.includes(event.id));
+
+    if (selectedEvents.length === 0) {
+      return res.status(404).json({
+        error: "No events found for the given IDs."});
+    }
+
+    // Calculate cosine similarity for each selected event
+    const recommendations = selectedEvents.map((selectedEvent) => {
+      const selectedGenre = selectedEvent.Genre;
+
+      const eventsWithSimilarity = eventsData.map((item) => {
+        if (item.id === selectedEvent.id) {
+          return {...item, similarity: 1};
+        } else if (item.Genre === selectedGenre) {
+          const similarity = cosineSimilarity(selectedGenre, item.Genre);
+          return {...item, similarity};
+        } else {
+          return {...item, similarity: 0};
+        }
+      });
+
+      // Filter and sort events based on similarity and ratings
+      const similarityThreshold = 0.1; // Adjust this threshold as needed
+      const filteredEvents = eventsWithSimilarity.filter((item) => {
+        return item.similarity >= similarityThreshold && item.Ratings >= 2;
+      });
+
+      // Sort the events based on similarity and ratings
+      const sortedEvents = filteredEvents.sort((a, b) => {
+        // Sort by similarity first, then by ratings
+        if (a.similarity === b.similarity) {
+          return b.Ratings - a.Ratings;
+        }
+        return b.similarity - a.similarity;
+      });
+
+      return {selectedEvent, recommendations: sortedEvents};
+    });
+
+    return res.status(200).json(recommendations);
   } catch (error) {
-    console.error("Error retrieving recommended events:", error);
-    res.status(500).send("Internal server error");
+    console.error("Error occurred:", error);
+    return res.status(500).json({error: "Internal server error."});
   }
 });
-
-function calculateSimilarity(requestedEventsData, eventB) {
-  if (!eventB || !eventB.Genre) {
-    // Return a default similarity score
-    // (e.g., 0) when eventB or its Genre property is not available
-    return 0;
-  }
-
-  const genreArrayB = eventB.Genre.split(",");
-  let totalSimilarityScore = 0;
-
-  for (const requestedEvent of requestedEventsData) {
-    const genreArrayA = requestedEvent.Genre.split(",");
-    // Find common genres
-    const commonGenres = genreArrayA.filter((genre) =>
-      genreArrayB.includes(genre),
-    );
-    // Calculate similarity score based on the number of common genres
-    const similarityScore =
-      commonGenres.length / Math.sqrt(genreArrayA.length * genreArrayB.length);
-    totalSimilarityScore += similarityScore;
-  }
-
-  const averageSimilarityScore =
-    totalSimilarityScore / requestedEventsData.length;
-  return averageSimilarityScore;
-}

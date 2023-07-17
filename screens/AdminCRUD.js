@@ -225,18 +225,18 @@ const AdminCRUD = ({ navigation }) => {
           <View style={styles.iconContainer}>
           {/* Edit Event Icon */}
           <TouchableOpacity onPress={() => handleEditEvent(item)}>
-            <Icon name="pencil" size={24} color="white" />
+            <Icon name="pencil" size={24} color="black" />
           </TouchableOpacity>
           {/* Delete Event Icon */}
           <TouchableOpacity onPress={() => setDeleteConfirmation(item.id)}>
-            <Icon name="delete" size={24} color="white" />
+            <Icon name="delete" size={24} color="black" />
           </TouchableOpacity>
           {/* Favorite Event Icon */}
           <TouchableOpacity style={styles.favoriteButton} onPress={() => handleToggleSelection(item.id)}>
             <Icon
               name={isEventSelected ? 'heart' : 'heart-outline'}
               size={20}
-              color={isEventSelected ? 'red' : 'white'}
+              color={isEventSelected ? 'red' : 'black'}
             />
           </TouchableOpacity>
         </View>
@@ -249,7 +249,7 @@ const AdminCRUD = ({ navigation }) => {
     <View style={styles.container}>
       {/* Add Event button */}
       <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-        <Icon name="plus" size={24} color="#FFFFFF" />
+        <Icon name="plus" size={24} color="black" />
       </TouchableOpacity>
       
       {/* Modal for entering event details */}
@@ -359,6 +359,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f9f9f9',
+
   },
  
   searchInput: {
@@ -370,11 +371,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cardStyle: {
-    backgroundColor: '#333333',
+    backgroundColor: 'white',
     borderRadius: 8,
     padding: 16,
     marginBottom: 16, // Add marginBottom to create space between cards
     shadowColor: '#000',
+    color: 'black',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -386,6 +388,8 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    color: 'black',
+    
   },
   addButtonWrapper: {
     flexDirection: 'row',
@@ -447,17 +451,18 @@ const styles = StyleSheet.create({
   eventDetails: {
     marginLeft: 16,
     flex: 1,
+
   },
   eventName: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#FFFFFF',
+    color: 'black',
   },
   eventLocation: {
     fontSize: 14,
     marginBottom: 8,
-    color: '#FFFFFF',
+    color: 'gray',
   },
   recommendationButton: {
     backgroundColor: 'blue',

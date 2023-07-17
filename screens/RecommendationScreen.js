@@ -16,31 +16,35 @@ const RecommendationScreen = () => {
         setRecommendedEvents([]);
         return;
       }
-
+  
       const id = selectedEvents.join(',');
-      const response = await fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getRecommendedEvents?id=${id}`);
+      const response = await fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getRecommendations?ids=${id}`);
       const data = await response.json();
+      console.log(data); // Add this line to check the response data
       setRecommendedEvents(data);
     } catch (error) {
       console.log('Error fetching recommended events:', error);
     }
   };
-
+  
   const renderCard = (event, index) => {
-    if (!event) {
+    if (!event || !event.selectedEvent) {
       return null;
     }
-    return (
-      <View key={`${event.id}_${index}`} style={styles.cardStyle}>
+  
+    const recommendedEvents = event.recommendations;
+  
+    return recommendedEvents.map((recommendedEvent, index) => (
+      <View key={`${recommendedEvent.id}_${index}`} style={styles.cardStyle}>
         <View style={styles.cardContent}>
-          <Image source={{ uri: event.Images }} style={styles.eventImage} resizeMode="contain" />
+          <Image source={{ uri: recommendedEvent.Images }} style={styles.eventImage} resizeMode="contain" />
           <View style={styles.eventDetails}>
-            <Text style={styles.eventName}>{event.Workshop}</Text>
-            <Text style={styles.eventLocation}>{event.College}</Text>
+            <Text style={styles.eventName}>{recommendedEvent.Workshop}</Text>
+            <Text style={styles.eventLocation}>{recommendedEvent.College}</Text>
           </View>
         </View>
       </View>
-    );
+    ));
   };
 
   const handleRefresh = () => {
@@ -74,7 +78,7 @@ const styles = StyleSheet.create({
   },
   cardStyle: {
     marginVertical: 8,
-    backgroundColor: '#333333',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     padding: 16,
     shadowColor: '#000',
@@ -89,6 +93,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    color:"black",
   },
   eventImage: {
     width: 100,
@@ -103,12 +108,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#FFFFFF',
+    color: 'black',
   },
   eventLocation: {
     fontSize: 14,
     marginBottom: 8,
-    color: '#FFFFFF',
+    color: 'black',
   },
   refreshButton: {
     alignSelf: 'flex-end',

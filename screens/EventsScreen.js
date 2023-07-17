@@ -50,7 +50,7 @@ const EventsScreen = ({ navigation }) => {
             <Icon
               name={isEventSelected ? 'heart' : 'heart-outline'}
               size={20}
-              color={isEventSelected ? 'red' : 'white'}
+              color={isEventSelected ? 'red' : 'black'}
             />
           </TouchableOpacity>
         </View>
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#333333',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     padding: 16,
     shadowColor: '#000',
@@ -137,12 +137,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#FFFFFF',
+    color: 'black',
   },
   eventLocation: {
     fontSize: 14,
     marginBottom: 8,
-    color: '#FFFFFF',
+    color: 'black',
   },
   recommendationButton: {
     backgroundColor: 'blue',

@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation
+
 
 const RecommendationScreen = () => {
   const selectedEvents = useSelector((state) => state.selectedEvents);
   const [recommendedEvents, setRecommendedEvents] = useState([]);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchRecommendedEvents();
@@ -16,7 +21,7 @@ const RecommendationScreen = () => {
         setRecommendedEvents([]);
         return;
       }
-  
+
       const id = selectedEvents.join(',');
       const response = await fetch(`https://us-central1-eventsnet-fa0f0.cloudfunctions.net/getRecommendations?ids=${id}`);
       const data = await response.json();
@@ -26,24 +31,51 @@ const RecommendationScreen = () => {
       console.log('Error fetching recommended events:', error);
     }
   };
-  
+
+  const renderStarIcons = (rating) => {
+    const starIcons = [];
+    const totalStars = 5; // Total number of stars to render
+
+    for (let i = 1; i <= totalStars; i++) {
+      const iconName = i <= rating ? 'star' : 'star-outline';
+      starIcons.push(<Icon key={i} name={iconName} size={20} color="gold" />);
+    }
+
+    return starIcons;
+  };
+
   const renderCard = (event, index) => {
     if (!event || !event.selectedEvent) {
       return null;
     }
-  
+
     const recommendedEvents = event.recommendations;
-  
+
     return recommendedEvents.map((recommendedEvent, index) => (
+      <TouchableOpacity
+      key={`${recommendedEvent.id}_${index}`}
+      style={styles.cardStyle}
+      onPress={() => {
+        // Log the clicked event
+        console.log('Clicked event:', recommendedEvent);
+        // Navigate to the DisplayScreen passing the selected event data as a parameter
+        navigation.navigate('DisplayScreen', { selectedEvent: recommendedEvent });
+      }}
+    >
       <View key={`${recommendedEvent.id}_${index}`} style={styles.cardStyle}>
         <View style={styles.cardContent}>
           <Image source={{ uri: recommendedEvent.Images }} style={styles.eventImage} resizeMode="contain" />
           <View style={styles.eventDetails}>
             <Text style={styles.eventName}>{recommendedEvent.Workshop}</Text>
             <Text style={styles.eventLocation}>{recommendedEvent.College}</Text>
+            <View style={styles.eventRatingsContainer}>
+              {/* Show the star icons for the ratings */}
+              {renderStarIcons(recommendedEvent.Ratings)}
+            </View>
           </View>
         </View>
       </View>
+      </TouchableOpacity>
     ));
   };
 
@@ -93,7 +125,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    color:"black",
+    color: 'black',
   },
   eventImage: {
     width: 100,
@@ -114,6 +146,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
     color: 'black',
+  },
+  eventRatingsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
   },
   refreshButton: {
     alignSelf: 'flex-end',

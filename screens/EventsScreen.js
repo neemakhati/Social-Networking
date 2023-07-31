@@ -5,13 +5,30 @@ import { View, Image, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } 
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleEventSelection } from '../redux/actions';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
 
+const renderStarIcons = (rating) => {
+  const starIcons = [];
+  const totalStars = 5; // Total number of stars to render
+
+  for (let i = 1; i <= totalStars; i++) {
+    const iconName = i <= rating ? 'star' : 'star-outline';
+    starIcons.push(<Icon key={i} name={iconName} size={20} color="gold" />);
+  }
+
+  return starIcons;
+};
 const EventsScreen = ({ navigation }) => {
   const [events, setEvents] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('Kathmandu');
   const selectedEvents = useSelector((state) => state.selectedEvents);
   const dispatch = useDispatch();
 
+  const handleCardPress = (item) => {
+    console.log(item.id);
+    // Navigate to the DisplayScreen passing the selected event data as a parameter
+    navigation.navigate('DisplayScreen', { selectedEvent: item });
+  };
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -35,13 +52,19 @@ const EventsScreen = ({ navigation }) => {
   const renderCard = ({ item }) => {
     const isEventSelected = selectedEvents.includes(item.id);
 
+
     return (
+      <TouchableOpacity onPress={()=>handleCardPress(item)}>
       <View style={styles.cardStyle}>
         <View style={styles.cardContent}>
           <Image source={{ uri: item.Images }} style={styles.eventImage} resizeMode="contain" />
           <View style={styles.eventDetails}>
             <Text style={styles.eventName}>{item.Workshop}</Text>
             <Text style={styles.eventLocation}>{item.College}</Text>
+            <View style={styles.eventRatingsContainer}>
+            {/* Show the star icons for the ratings */}
+            {renderStarIcons(item.Ratings)}
+          </View>
           </View>
           <TouchableOpacity
             style={styles.favoriteButton}
@@ -55,6 +78,7 @@ const EventsScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
+      </TouchableOpacity>
     );
   };
 
@@ -88,6 +112,10 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f9f9f9',
   },
+  eventRatingsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,},
   searchInput: {
     height: 40,
     borderColor: 'gray',
